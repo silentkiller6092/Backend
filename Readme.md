@@ -10,4 +10,4 @@ Database connection
 - Will use IFE immidiate function for db connection
 - All the configuration we had did in app.js like url configuration cookie parser and other configuration
 - Middleware - Checing in between request and response is treat as middleware
--
+  -JWT token is bearer token its like key
