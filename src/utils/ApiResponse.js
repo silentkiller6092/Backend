@@ -7,3 +7,4 @@ class ApiResponse {
     //Status code shoud be less then 400 for Success message
   }
 }
+export { ApiResponse };
