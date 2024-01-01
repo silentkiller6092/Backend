@@ -24,16 +24,31 @@ const registerUser = asynHandler(async (req, res) => {
     throw new ApiError(400, "All fields must be provided");
   }
   //  Have to add email and other validation
-  const existingUser = User.findOne({
+  const existingUser = await User.findOne({
     $or: [{ username }, { email }],
   });
   if (existingUser) throw new ApiError(409, "User already exists");
 
   // Handling the images req.files ahve info about file using multer
-  const avatarLocalPath = req.files?.avatar[0]?.path;
-  const coverImageLocalPath = req.files?.coverImage[0]?.path;
-  if (!avatarLocalPath) throw new ApiError(400, "Avatar file is required");
+  // let avatarLocalPath=''
+  const avatarLocalPath = req.files?.avatar?.[0]?.path;
+
+  if (!avatarLocalPath) {
+    throw new ApiError(400, "Avatar file is required");
+  }
+
+  // The rest of your code for processing the avatarLocalPath
+
+  let coverImageLocalPath = "";
+  if (
+    req.files &&
+    Array.isArray(req.files.coverImage) &&
+    req.files.coverImage > 0
+  ) {
+    coverImageLocalPath = req.files.coverImage[0].path;
+  }
   const avatar = await uploadOnCloudnary(avatarLocalPath);
+
   const coverImage = await uploadOnCloudnary(coverImageLocalPath);
   if (!avatar) throw new ApiError(400, "Avatar file is required");
   const userCreation = await User.create({
@@ -47,7 +62,7 @@ const registerUser = asynHandler(async (req, res) => {
   const createdUser = await User.findById(userCreation._id).select(
     "-password -refreshToken"
   );
-  if (createdUser)
+  if (!createdUser)
     throw new ApiError(500, "Something went wrong while Registering the user");
   return res
     .status(201)
