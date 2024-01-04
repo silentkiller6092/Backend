@@ -164,7 +164,7 @@ const refreshaccessToken = asynHandler(async (req, res) => {
   try {
     const incomingrefreshToken =
       req.cookies.accessToken || req.header.refreshToken;
-    if (incomingrefreshToken)
+    if (!incomingrefreshToken)
       throw new ApiError(401, "Unauthenticated request");
     const verifiedToken = Jwt.verify(
       incomingrefreshToken,
@@ -201,5 +201,9 @@ const refreshaccessToken = asynHandler(async (req, res) => {
   } catch (e) {
     throw new ApiError(401, e?.message || "Unauthenticated request");
   }
+});
+
+const changeCurrentPassword = asynHandler(async (req, res) => {
+  const { oldPassword, newPassword } = req.body;
 });
 export { registerUser, loginUser, logoutUser, refreshaccessToken };
