@@ -204,6 +204,86 @@ const refreshaccessToken = asynHandler(async (req, res) => {
 });
 
 const changeCurrentPassword = asynHandler(async (req, res) => {
-  const { oldPassword, newPassword } = req.body;
+  try {
+    const { oldPassword, newPassword } = req.body;
+    const user = await User.findById(req.user?._id);
+    const isPasswordCorrect = await user.isPasswordCorrect(oldPassword);
+    if (!isPasswordCorrect)
+      throw new ApiError(400, e?.message || "Old Password is incorrect");
+    user.password = newPassword;
+    await user.save({ validateBeforeSave: false });
+
+    return res
+      .status(200)
+      .json(new ApiResponse(200, {}, "Password updated successfully"));
+  } catch (e) {
+    throw new ApiError(401, e?.message || "Unable to change current password");
+  }
 });
-export { registerUser, loginUser, logoutUser, refreshaccessToken };
+
+const getcurrentUser = asynHandler(async (req, res) => {
+  return res
+    .status(200)
+    .json(new ApiResponse(200, req.user, "Current User fetched successfully"));
+});
+
+const updateUserDetails = asynHandler(async (req, res) => {
+  const { fullName, email } = req.body;
+  if (!(fullName && email)) throw new ApiError(400, "All field required");
+  const existinDetails = await User.findByIdAndUpdate(
+    req.user?._id,
+    { $set: { fullName, email } },
+    { new: true }
+  ).select("-password");
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(
+        200,
+        existinDetails,
+        "Account details updated successfully"
+      )
+    );
+});
+
+const updateuserAvatr = asynHandler(async (req, res) => {
+  const avatrLocalPath = req.file?.path;
+  if (!avatrLocalPath) throw new ApiError(400, "Avatr file not found");
+  const avtarfile = await uploadOnCloudnary(avatrLocalPath);
+  if (!avtarfile.url)
+    throw new ApiError(400, "Error while uploading avtar file");
+  const avatrDetail = await User.findByIdAndUpdate(
+    req.user._id,
+    {
+      $set: { avatar: avtarfile.url },
+    },
+    { new: true }
+  ).select("-password");
+  return res.status(200).json(200, avatrDetail, "File Updated successfully");
+});
+
+const coverImageUpdate = asynHandler(async (req, res) => {
+  const localUrl = req.file.url;
+  if (!localUrl) throw new ApiError(400, "File not found");
+  const cloudUrl = uploadOnCloudnary(localUrl);
+  if (!cloudUrl) throw new ApiError(400, "Error while uploading file to cloud");
+  const userDetials = await User.findByIdAndUpdate(
+    req.user._id,
+    { $set: { coverImage: cloudUrl } },
+    { new: true }
+  ).select("-password");
+  return res.status(200).json(200, userDetials, "File Updated successfully");
+});
+
+//  Have to make function to delete file from cloud
+export {
+  registerUser,
+  loginUser,
+  logoutUser,
+  refreshaccessToken,
+  changeCurrentPassword,
+  getcurrentUser,
+  updateUserDetails,
+  updateuserAvatr,
+  coverImageUpdate,
+};
