@@ -4,6 +4,7 @@ import { User } from "../models/Users.model.js";
 import { uploadOnCloudnary } from "../utils/Cloduniary.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import Jwt from "jsonwebtoken";
+import { response } from "express";
 const generateAccessTokenAndrefreshToken = async (userId) => {
   try {
     const user = await User.findById(userId);
@@ -276,6 +277,71 @@ const coverImageUpdate = asynHandler(async (req, res) => {
 });
 
 //  Have to make function to delete file from cloud
+
+// MongoDb Pipeline API
+
+const getUserChanelProfile = asynHandler(async (req, res) => {
+  const { userName } = req.params;
+  if (!userName?.trim()) throw new ApiError(400, "UserName is required");
+  const channel = await User.aggregate([
+    {
+      $match: {
+        username: userName?.toLowerCase(),
+      },
+    },
+    {
+      $lookup: {
+        from: "subscriptions",
+        localField: "_id",
+        foreignField: "channel",
+        as: "subscribers",
+      },
+    },
+    {
+      $lookup: {
+        from: "subscriptions",
+        localField: "_id",
+        foreignField: "subscriber",
+        as: "subscribedTo",
+      },
+    },
+    {
+      $addFields: {
+        subscriberCount: {
+          $size: "$subscribers",
+        },
+        subscribedToCount: {
+          $size: "$subscribedTo",
+        },
+        isSubsctibed: {
+          $condition: {
+            if: { $in: [req.user?._id, "$subscribers.subscriber"] },
+            then: true,
+            else: false,
+          },
+        },
+      },
+    },
+    {
+      $project: {
+        fullName: 1,
+        email: 1,
+        username: 1,
+        subscriberCount: 1,
+        subscribedToCount: 1,
+        isSubsctibed: 1,
+        avatar: 1,
+        coverImage: 1,
+      },
+    },
+  ]);
+  if (channel?.length) throw new Error("Channel is doens't exist");
+  return res
+    .status(200)
+    .json(
+      new ApiResponse(200, channel[0], "User Channel fetched successfully")
+    );
+});
 export {
   registerUser,
   loginUser,
@@ -286,4 +352,5 @@ export {
   updateUserDetails,
   updateuserAvatr,
   coverImageUpdate,
+  getUserChanelProfile,
 };

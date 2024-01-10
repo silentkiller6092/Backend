@@ -54,3 +54,4 @@ Database connection
   - 5 xx : Server Error
 - Access Token : access token this is short lived it will be to user show that user can work continusly
 - RefreshToken : refresh token it is for long lived it store in both database and user cookie
+- Aggregation Pipeline : Its like a stage each stage perform on the input documnet & document that are output from a stage are passed to the next stage
