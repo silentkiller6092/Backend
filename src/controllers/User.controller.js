@@ -5,6 +5,7 @@ import { uploadOnCloudnary } from "../utils/Cloduniary.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import Jwt from "jsonwebtoken";
 import { response } from "express";
+import mongoose from "mongoose";
 const generateAccessTokenAndrefreshToken = async (userId) => {
   try {
     const user = await User.findById(userId);
@@ -281,6 +282,7 @@ const coverImageUpdate = asynHandler(async (req, res) => {
 // MongoDb Pipeline API
 
 const getUserChanelProfile = asynHandler(async (req, res) => {
+  // Have to check from user.req_username
   const { userName } = req.params;
   if (!userName?.trim()) throw new ApiError(400, "UserName is required");
   const channel = await User.aggregate([
@@ -342,6 +344,55 @@ const getUserChanelProfile = asynHandler(async (req, res) => {
       new ApiResponse(200, channel[0], "User Channel fetched successfully")
     );
 });
+
+const watchHistory = asynHandler(async (req, res) => {
+  const user = await User.aggregate([
+    {
+      $match: {
+        _id: new mongoose.Types.ObjectId(req.user_id), // mongoose not work here so convert the id
+      },
+    },
+    {
+      $lookup: {
+        from: "Video",
+        localField: "watchHistory",
+        foreignField: "_id",
+        as: "watchHistory",
+        pipeline: [
+          {
+            $lookup: {
+              from: "User",
+              localField: "owner",
+              foreignField: "_id",
+              as: "owner",
+              pipeline: [
+                {
+                  $project: [
+                    {
+                      fullName: 1,
+                      username: 1,
+                      avatar: 1,
+                    },
+                  ],
+                },
+              ],
+            },
+          },
+          {
+            $addFields: {
+              owner: {
+                $first: "$owner",
+              },
+            },
+          },
+        ],
+      },
+    },
+  ]);
+  return res
+    .status(200)
+    .json(new ApiResponse(200, user[0].watchHistory, "Watch History featched"));
+});
 export {
   registerUser,
   loginUser,
@@ -353,4 +404,5 @@ export {
   updateuserAvatr,
   coverImageUpdate,
   getUserChanelProfile,
+  watchHistory,
 };
