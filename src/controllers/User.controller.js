@@ -4,7 +4,6 @@ import { User } from "../models/Users.model.js";
 import { uploadOnCloudnary } from "../utils/Cloduniary.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import Jwt from "jsonwebtoken";
-import { response } from "express";
 import mongoose from "mongoose";
 const generateAccessTokenAndrefreshToken = async (userId) => {
   try {
@@ -167,17 +166,18 @@ const logoutUser = asynHandler(async (req, res) => {
 const refreshaccessToken = asynHandler(async (req, res) => {
   try {
     const incomingrefreshToken =
-      req.cookies.accessToken || req.header.refreshToken;
+      req.cookies.refreshToken || req.headers.refreshToken; // Use req.headers.refreshToken instead of req.header.refreshToken
     if (!incomingrefreshToken)
       throw new ApiError(401, "Unauthenticated request");
     const verifiedToken = Jwt.verify(
       incomingrefreshToken,
-      process.env.ACCESS_TOKEN_SECRET
+      process.env.REFRESH_TOEKN_SECRET
     );
-    const user = User.findById(verifiedToken?._id).select("-password");
+
+    const user = await User.findById(verifiedToken?._id).select("-password"); // Add 'await' to make sure the user is fetched before proceeding
     if (!user) throw new ApiError(401, "Unauthenticated request");
 
-    if (incomingrefreshToken !== user?.refreshToken) {
+    if (incomingrefreshToken !== user.refreshToken) {
       throw new ApiError(
         401,
         "Refresh token used for authentication or expired"
@@ -188,17 +188,20 @@ const refreshaccessToken = asynHandler(async (req, res) => {
       httpOnly: true,
       secure: true,
     };
-    const { newaccessToekn, newrefreshToken } =
+    const {
+      newaccessToken,
+      newrefreshToken,
+    } = // Correct the typo in the variable name (newaccessToekn -> newaccessToken)
       await generateAccessTokenAndrefreshToken(user._id);
+
     return res
       .status(200)
-      .cookie("accessToken", newaccessToekn, options)
-
+      .cookie("accessToken", newaccessToken, options) // Correct the typo in the cookie name (newaccessToekn -> newaccessToken)
       .cookie("refreshToken", newrefreshToken, options)
       .json(
         new ApiResponse(
           200,
-          { accesToken: newaccessToekn, refreshToken: newrefreshToken },
+          { accessToken: newaccessToken, refreshToken: newrefreshToken }, // Correct the typo in the response object (accesToken -> accessToken)
           "Access Token Refreshed"
         )
       );
@@ -285,12 +288,14 @@ const coverImageUpdate = asynHandler(async (req, res) => {
 
 const getUserChanelProfile = asynHandler(async (req, res) => {
   // Have to check from user.req_username
-  const { userName } = req.params;
-  if (!userName?.trim()) throw new ApiError(400, "UserName is required");
+  const { username } = req.params;
+
+  if (!username?.trim()) throw new ApiError(400, "UserName is required");
+
   const channel = await User.aggregate([
     {
       $match: {
-        username: userName?.toLowerCase(),
+        username: username?.toLowerCase(),
       },
     },
     {
@@ -318,7 +323,7 @@ const getUserChanelProfile = asynHandler(async (req, res) => {
           $size: "$subscribedTo",
         },
         isSubsctibed: {
-          $condition: {
+          $cond: {
             if: { $in: [req.user?._id, "$subscribers.subscriber"] },
             then: true,
             else: false,
@@ -339,7 +344,9 @@ const getUserChanelProfile = asynHandler(async (req, res) => {
       },
     },
   ]);
-  if (channel?.length) throw new Error("Channel is doens't exist");
+
+  console.log("THis is channel", channel);
+  if (channel?.length == 0) throw new Error("Channel is doens't exist");
   return res
     .status(200)
     .json(

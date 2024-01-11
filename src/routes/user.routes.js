@@ -37,6 +37,6 @@ router
 router
   .route("/update-cover")
   .patch(verifyJWT, upload.single("cover"), coverImageUpdate);
-router.route("/channel/:username").get(verifyJWT, getUserChanelProfile); //getting data from params
+router.route("/c/:username").get(verifyJWT, getUserChanelProfile); //getting data from params
 router.route("/history").get(verifyJWT, watchHistory);
 export default router;
