@@ -75,6 +75,8 @@ const registerUser = asynHandler(async (req, res) => {
     username: username.toLowerCase(),
     password,
   });
+
+  await generateAccessTokenAndrefreshToken(userCreation._id);
   const createdUser = await User.findById(userCreation._id).select(
     "-password -refreshToken"
   );
@@ -108,9 +110,7 @@ const loginUser = asynHandler(async (req, res) => {
   if (!isPasswordValid) throw new ApiError(401, "Incorrect user credentials");
   const { accessToekn, refreshToken } =
     await generateAccessTokenAndrefreshToken(user._id);
-  const loggedinUser = await User.findById(user._id).select(
-    "-password -refreshToken"
-  );
+  const loggedinUser = await User.findById(user._id).select("-password ");
   const options = {
     httpOnly: true,
     secure: true,
@@ -137,21 +137,23 @@ const loginUser = asynHandler(async (req, res) => {
 const logoutUser = asynHandler(async (req, res) => {
   try {
     const userID = req.user._id;
-    await User.findByIdAndUpdate(
+    const d = await User.findByIdAndUpdate(
       userID,
       {
-        $set: {
-          refreshToken: undefined,
+        $unset: {
+          refreshToken: 1,
         },
       },
       {
         new: true,
       }
     );
+
     const options = {
       httpOnly: true,
       secure: true,
     };
+
     return res
       .status(200)
       .clearCookie("accessToken", options)
