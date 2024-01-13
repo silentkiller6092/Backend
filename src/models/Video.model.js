@@ -20,12 +20,20 @@ const videoModel = new Schema(
       required: true,
     },
     duration: {
-      type: Number, // We will take thsi from cloudinary
+      type: Number,
       required: true,
     },
     views: {
       type: Number, // We will take
       default: 0,
+    },
+    cloudinaryVideoID: {
+      type: String,
+      required: true,
+    },
+    cloudinaryThumbnailID: {
+      type: String,
+      required: true,
     },
     isPublished: {
       type: Boolean,

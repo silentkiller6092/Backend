@@ -21,4 +21,16 @@ const uploadOnCloudnary = async (localfilepath) => {
     fs.unlinkSync(localfilepath);
   }
 };
-export { uploadOnCloudnary };
+
+const deleteFile = async (publicid) => {
+  try {
+    if (!publicid) return "Public id not found";
+    const deletresponse = await cloudinary.uploader.destroy(publicid, {
+      resource_type: "video",
+    });
+    return deletresponse;
+  } catch (e) {
+    return e.message;
+  }
+};
+export { uploadOnCloudnary, deleteFile };
