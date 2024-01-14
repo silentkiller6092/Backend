@@ -19,11 +19,13 @@ import videoRouter from "./routes/video.routes.js";
 import commentrouter from "./routes/comments.routes.js";
 import tweetrouter from "./routes/Tweets.routes.js";
 import likerouter from "./routes/Like.routes.js";
+import subsrouter from "./routes/subscription.routes.js";
 // routes declaration
 app.use("/api/v1/users", userRouter);
 app.use("/api/v1/video", videoRouter);
 app.use("/api/v1/comment", commentrouter);
 app.use("/api/v1/tweet", tweetrouter);
 app.use("/api/v1/like", likerouter);
+app.use("/api/v1/subscription", subsrouter);
 // http://localhost:8000/api/v1/users/register
 export { app };
