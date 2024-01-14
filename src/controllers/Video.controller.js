@@ -3,10 +3,10 @@ import { ApiError } from "../utils/ApiErrors.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { deleteFile, uploadOnCloudnary } from "../utils/Cloduniary.js";
 import { asynHandler } from "../utils/asyncHandler.js";
-import mongoose from "mongoose";
 const videoUpload = asynHandler(async (req, res) => {
   try {
     const { title, description } = req.body;
+    const userid = req.user._id;
     const videoFileLocalPath = req.files?.videoFile?.[0]?.path;
     const thumbnailFileLocalPath = req.files?.thumbnail?.[0]?.path;
     if (!videoFileLocalPath) throw new ApiError(400, "Video file required");
@@ -26,6 +26,7 @@ const videoUpload = asynHandler(async (req, res) => {
       duration: uploadVideoOnCloudinary.duration,
       cloudinaryVideoID: uploadVideoOnCloudinary.public_id, //Adding these details to delete the video from the cloudinary also
       cloudinaryThumbnailID: uploadThubnailCloudinary.public_id,
+      owner: userid,
     });
     if (!videoPublish)
       throw ApiError(500, "Something went wrong while uploading");
@@ -39,8 +40,35 @@ const videoUpload = asynHandler(async (req, res) => {
 
 const getAllVideos = asynHandler(async (req, res) => {
   const { page = 1, limit = 10, query, sortBy, sortType, userId } = req.query;
-
-  //TODO: get all videos based on query, sort, pagination
+  const sortOptions = {};
+  if (sortBy) {
+    sortOptions[sortBy] = sortType == "desc" ? -1 : 1;
+  }
+  try {
+    const result = await Video.aggregate([
+      {
+        $match: {
+          $or: [
+            { title: { $regex: query, $options: "i" } },
+            { description: { $regex: query, $options: "i" } },
+          ],
+          owner: userId,
+        },
+      },
+      {
+        $sort: sortOptions,
+      },
+      {
+        $skip: (page - 1) * limit,
+      },
+      {
+        $limit: parseInt(limit),
+      },
+    ]);
+    return res.status(200).json(new ApiResponse(200, { result }, "Success"));
+  } catch (e) {
+    throw new ApiError(500, e.message);
+  }
 });
 const getVideoById = asynHandler(async (req, res) => {
   try {
