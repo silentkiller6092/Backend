@@ -22,6 +22,7 @@ import likerouter from "./routes/Like.routes.js";
 import subsrouter from "./routes/subscription.routes.js";
 import playlistrouter from "./routes/Playlist.routes.js";
 import dashBoardrouter from "./routes/dashboard.routes.js";
+import healthrouter from "./routes/Healthcheck.routes.js";
 // routes declaration
 app.use("/api/v1/users", userRouter);
 app.use("/api/v1/video", videoRouter);
@@ -31,5 +32,6 @@ app.use("/api/v1/like", likerouter);
 app.use("/api/v1/subscription", subsrouter);
 app.use("/api/v1/playlist", playlistrouter);
 app.use("/api/v1/dashboard", dashBoardrouter);
+app.use("/api/v1/health", healthrouter);
 // http://localhost:8000/api/v1/users/register
 export { app };
