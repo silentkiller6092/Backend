@@ -73,9 +73,7 @@ const getAllVideos = asynHandler(async (req, res) => {
 const getVideoById = asynHandler(async (req, res) => {
   try {
     const { videoId } = req.params;
-    const videoUrl = await Video.findById(videoId).select(
-      "-thumbnail -title -description "
-    );
+    const videoUrl = await Video.findById(videoId);
     if (!videoUrl) throw new ApiError(404, "Video not found");
 
     return res

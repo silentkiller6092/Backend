@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import { Subscription } from "../models/subscription.model.js";
 import { ApiError } from "../utils/ApiErrors.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
@@ -32,7 +33,9 @@ const toggleSubscription = asynHandler(async (req, res) => {
 const getUserChannelSubscribers = asynHandler(async (req, res) => {
   try {
     const { channelId } = req.params;
-    const subscribber = await Subscription.find({ channel: channelId });
+    const subscribber = await Subscription.find({
+      channel: new mongoose.Types.ObjectId(channelId),
+    });
     return res
       .status(200)
       .json(new ApiResponse(200, { subscribber }, "Success"));
